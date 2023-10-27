@@ -123,7 +123,7 @@ public class ClientConfig {
             }
         }
         if (jsonObject.has("chat.port")) {
-            jsonObject.put("chat.port", 52741);
+            jsonObject.put("chat.port", 52742);
         }
         return jsonObject;
     }

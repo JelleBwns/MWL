@@ -17,7 +17,7 @@ public class SocketHandler implements Runnable {
     public void run() {
         try {
             // incoming connection from the league client
-            serverSocket = new ServerSocket(52741);
+            serverSocket = new ServerSocket(52742);
             System.out.println("waiting for connection");
             Socket in = serverSocket.accept();
             System.out.println("connection accepted");

@@ -19,6 +19,7 @@ public class Main {
         );
         Process process = builder.start();
 
+        System.out.println("start socket handler");
         // create an instance of our socket manager
         SocketHandler socketHandler = new SocketHandler();
         // start the socket manager and wait for league client to connect and initialize proxy

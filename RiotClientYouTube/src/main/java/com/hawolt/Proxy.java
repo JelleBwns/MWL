@@ -2,6 +2,7 @@ package com.hawolt;
 
 import io.javalin.Javalin;
 import io.javalin.http.Handler;
+import io.javalin.http.HandlerType;
 import org.json.JSONObject;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -29,11 +30,24 @@ public class Proxy {
         Javalin javalin = Javalin.create()
                 .get("*", Proxy.HANDLER)
                 .put("*", Proxy.HANDLER)
+                .head("*", Proxy.HANDLER)
                 .post("*", Proxy.HANDLER)
+                .patch("*", Proxy.HANDLER)
+                .delete("*", Proxy.HANDLER)
+                .options("*", Proxy.HANDLER)
+                .before("*", context -> {
+                    context.header("access-control-allow-method", "*");
+                    context.header("access-control-allow-headers", "*");
+                    context.header("access-control-allow-origin", "*");
+                })
                 .start(port);
     }
 
     public static final Handler HANDLER = context -> {
+        if (context.method() == HandlerType.OPTIONS) {
+            context.status(200);
+            return;
+        }
         System.out.println(context.method() + " " + context.fullUrl());
         int port = Integer.parseInt(context.fullUrl().split(":")[2].split("/")[0]);
         // construct url the riot client wants to reach
