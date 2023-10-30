@@ -9,7 +9,7 @@
     <version>1.0</version>
     <packaging>pom</packaging>
     <modules>
-        <module>RiotClientYouTube</module>
+        <module>MiniProxy</module>
     </modules>
 
     <properties>

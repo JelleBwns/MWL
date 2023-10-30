@@ -3,12 +3,14 @@ package com.hawolt;
 import io.javalin.http.Handler;
 import org.json.JSONObject;
 
-import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -17,16 +19,44 @@ import java.util.zip.GZIPOutputStream;
 public class ClientConfig {
 
     static {
-        Proxy.map.put(15471, "https://clientconfig.rpg.riotgames.com");
+        LocalProxy.map.put(15471, "https://clientconfig.rpg.riotgames.com");
     }
 
     public static final Handler HANDLER = context -> {
-        System.out.println(context.fullUrl());
+        TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
+            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+            }
+            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+            }
+        }
+        };
+
+        // Install the all-trusting trust manager
+        SSLContext sc = SSLContext.getInstance("SSL");
+        sc.init(null, trustAllCerts, new java.security.SecureRandom());
+        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+        // Create all-trusting host name verifier
+        HostnameVerifier allHostsValid = new HostnameVerifier() {
+            public boolean verify(String hostname, SSLSession session) {
+                return true;
+            }
+        };
+
+        // Install the all-trusting host verifier
+        HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+
+
+//        System.out.println(context.fullUrl());
         int port = Integer.parseInt(context.fullUrl().split(":")[2].split("/")[0]);
         // construct url the riot client wants to reach
-        String url = String.format("%s%s?%s", Proxy.map.get(port), context.path(), context.queryString());
+        String url = String.format("%s%s?%s", LocalProxy.map.get(port), context.path(), context.queryString());
         // open a connection to the url we constructed
-        HttpsURLConnection request = (HttpsURLConnection) new URL(url).openConnection();
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8080));
+        HttpsURLConnection request = (HttpsURLConnection) new URL(url).openConnection(proxy);
         // use all headers the riot client wanted to use
         for (Map.Entry<String, String> entry : context.headerMap().entrySet()) {
             request.setRequestProperty(entry.getKey(), entry.getValue());
@@ -49,7 +79,7 @@ public class ClientConfig {
             }
         }
 
-        System.out.println(plainText);
+//        System.out.println(plainText);
         JSONObject plainSettings = new JSONObject(plainText);
         plainSettings = modifyLeagueSettings(plainSettings);
         plainSettings = modifyChatSettings(plainSettings);
@@ -84,11 +114,11 @@ public class ClientConfig {
 
     private static JSONObject modifyLeagueSettings(JSONObject plainSettings) {
         if (plainSettings.has("lol.client_settings.player_platform_edge.url")) {
-            Proxy.create(16987, plainSettings.getString("lol.client_settings.player_platform_edge.url"));
+            LocalProxy.create(16987, plainSettings.getString("lol.client_settings.player_platform_edge.url"));
             plainSettings.put("lol.client_settings.player_platform_edge.url", "http://127.0.0.1:16987");
         }
         if (plainSettings.has("lol.client_settings.league_edge.url")) {
-            Proxy.create(16989, plainSettings.getString("lol.client_settings.league_edge.url"));
+            LocalProxy.create(16989, plainSettings.getString("lol.client_settings.league_edge.url"));
             plainSettings.put("lol.client_settings.league_edge.url", "http://127.0.0.1:16989");
         }
         if (plainSettings.has("lol.game_client_settings.redge_urls.public")) {
@@ -101,9 +131,9 @@ public class ClientConfig {
                 //link = https://euw-red.lol.sgp.pvp.net
                 //link = http://127.0.0.1:15472
                 settings.put(key, "http://127.0.0.1:" + start);
-                Proxy.create(start += 1, link);
+                LocalProxy.create(start += 1, link);
             }
-            System.err.println(settings.toString(5));
+//            System.err.println(settings.toString(5));
             plainSettings.put("lol.game_client_settings.redge_urls.public", settings);
         }
         return plainSettings;

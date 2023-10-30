@@ -9,7 +9,7 @@
         <version>1.0</version>
     </parent>
 
-    <artifactId>RiotClientYouTube</artifactId>
+    <artifactId>MiniProxy</artifactId>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
